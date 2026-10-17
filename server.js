@@ -8,8 +8,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Automatically serve all static files (including index.html) from the project root folder
-app.use(express.static(__dirname));
+// Serve the index.html dashboard at the root URL
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Central Gateway endpoint for Chatbot queries - NO API KEY REQUIRED
 app.post('/api/v1/generate', async (req, res) => {
@@ -19,7 +21,6 @@ app.post('/api/v1/generate', async (req, res) => {
       return res.status(400).json({ error: 'Prompt field is required.' });
     }
 
-    // Fetching search results directly via public search query structure
     const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(prompt)}`;
     
     const response = await fetch(searchUrl, {
@@ -29,8 +30,6 @@ app.post('/api/v1/generate', async (req, res) => {
     });
 
     const htmlText = await response.text();
-    
-    // Extract snippet summaries from public search results
     const snippetMatches = [...htmlText.matchAll(/<a class="result__snippet"[^>]*>(.*?)<\/a>/g)];
     let extractedAnswers = snippetMatches.map(m => m[1].replace(/<[^>]*>?/gm, '')).slice(0, 3);
 
