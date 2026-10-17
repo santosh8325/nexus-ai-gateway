@@ -13,10 +13,13 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Strict Child Safety & Adult Content Blocklist for School Portals
+// Comprehensive Child Safety Shield: Full awareness of adult, pornographic, and inappropriate terms for automatic blocking
 const blockedKeywords = [
-  'porn', 'sex', 'adult', 'nude', 'gambling', 'casino', 'violence', 'kill', 
-  'suicide', 'drugs', 'alcohol', 'beer', 'wine', 'weapon', 'gun', 'curse', 'badword'
+  'porn', 'porno', 'pornography', 'sex', 'sexual', 'nude', 'nudity', 'naked', 'erotica', 'erotic',
+  'adult', 'xxx', 'nsfw', 'fetish', 'orgasm', 'prostitution', 'escort', 'striptease', 'stripper',
+  'gambling', 'casino', 'betting', 'poker', 'slots', 'violence', 'kill', 'murder', 'suicide',
+  'drugs', 'cocaine', 'heroin', 'meth', 'weed', 'cannabis', 'alcohol', 'beer', 'wine', 'liquor',
+  'weapon', 'gun', 'rifle', 'knife', 'firearm', 'curse', 'badword', 'swear', 'bdsm', 'incest'
 ];
 
 function isContentSafe(text) {
@@ -24,7 +27,7 @@ function isContentSafe(text) {
   return !blockedKeywords.some(keyword => lower.includes(keyword));
 }
 
-// Central Gateway endpoint - Designed to respond with Claude/Gemini AI Persona
+// Central Gateway endpoint - Advanced Child Protection & AI Assistant Persona
 app.post('/api/v1/generate', async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -34,38 +37,37 @@ app.post('/api/v1/generate', async (req, res) => {
 
     let cleanPrompt = prompt.trim();
 
-    // 1. Strict Child Safety Check
+    // 1. Advanced Child Safety Guard (Instantly intercepts and blocks any adult or explicit query)
     if (!isContentSafe(cleanPrompt)) {
       return res.json({
         success: true,
         engine: "NexusAI SafeSchool Guard",
-        answer: "I'm here to help you learn safely! Let's explore topics in math, science, history, or literature. What would you like to study next?",
+        answer: "I'm your dedicated school portal assistant! For safety and learning, I only discuss educational topics such as mathematics, science, history, and literature. How can I help you study today?",
         sources: []
       });
     }
 
     let answerText = "";
 
-    // 2. Instant Smart Math Solver (Direct & Precise like an AI tutor)
+    // 2. Instant Smart Math Solver (Directly evaluates expressions like 99 * 99 without fluff)
     const mathRegex = /^[\d\s\+\-\*\/\(\)\.]+$/;
     if (mathRegex.test(cleanPrompt) && /[+\-*/]/.test(cleanPrompt)) {
       try {
         const evaluatedResult = Function(`'use strict'; return (${cleanPrompt})`)();
         if (typeof evaluatedResult === 'number' && !isNaN(evaluatedResult)) {
-          answerText = `The answer to **${cleanPrompt}** is **${evaluatedResult}**.\n\nLet me know if you would like me to explain the steps or help you with another problem!`;
+          answerText = `The answer to **${cleanPrompt}** is **${evaluatedResult}**.\n\nLet me know if you need help with any other math problems or schoolwork!`;
         }
       } catch (e) {
-        // Fallback if parsing fails
+        // Fallback
       }
     }
 
-    // 3. Conversational AI Persona for General Questions
+    // 3. AI Assistant Persona for General Educational Queries
     if (!answerText) {
       const lower = cleanPrompt.toLowerCase();
       if (/^hi|hello|hey|greetings/.test(lower)) {
-        answerText = "Hello! I am your AI learning assistant. How can I help you explore and learn today?";
+        answerText = "Hello! I am your AI learning assistant. What subject would you like to explore today?";
       } else {
-        // Fetch web insights and structure them like an LLM assistant
         const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(cleanPrompt + " definition explanation homework")}`;
         
         const response = await fetch(searchUrl, {
@@ -78,16 +80,15 @@ app.post('/api/v1/generate', async (req, res) => {
         const snippetMatches = [...htmlText.matchAll(/<a class="result__snippet"[^>]*>(.*?)<\/a>/g)];
         let extractedAnswers = snippetMatches
           .map(m => m[1].replace(/<[^>]*>?/gm, ''))
-          .filter(snippet => isContentSafe(snippet))
+          .filter(snippet => isContentSafe(snippet)) // Double-checks snippets for safety
           .slice(0, 3);
 
         if (extractedAnswers.length > 0) {
-          // Format like Claude/Gemini: clean summary introduction followed by bulleted insights
           answerText = `Here is what you need to know about **${cleanPrompt}**:\n\n` + 
             extractedAnswers.map(ans => `• ${ans}`).join('\n\n') + 
-            `\n\nI hope this helps! Let me know if you have any other questions.`;
+            `\n\nI hope this helps with your studies! Let me know if you have any follow-up questions.`;
         } else {
-          answerText = `I processed your request regarding "${cleanPrompt}". Feel free to ask me follow-up questions so we can dive deeper into the topic!`;
+          answerText = `I processed your request regarding "${cleanPrompt}". How can I help you expand your knowledge on this topic?`;
         }
       }
     }
@@ -107,5 +108,5 @@ app.post('/api/v1/generate', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`NexusAI Assistant Server running on port ${PORT} (AI Persona Active)`);
+  console.log(`NexusAI Assistant Server running on port ${PORT} (Advanced Child Protection Active)`);
 });
