@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusAI Gateway & API Provider Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f3ff',
+                            100: '#e1e7fe',
+                            200: '#c5d2fe',
+                            300: '#99b0fd',
+                            400: '#6385fa',
+                            500: '#3b5bf6',
+                            600: '#253ea8',
+                            700: '#1d2f88',
+                            800: '#1b296f',
+                            900: '#1b245a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+        .animate-glow { animation: pulseGlow 3s ease-in-out infinite; }
+    </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 flex flex-col overflow-x-hidden antialiased selection:bg-brand-500 selection:text-white">
+
+    <div id="toast-box" class="fixed top-5 right-5 z-50 flex items-center gap-3 bg-slate-900/90 border border-slate-700/80 px-4 py-3 rounded-2xl shadow-2xl text-xs font-medium backdrop-blur-xl transition-all duration-300 opacity-0 pointer-events-none translate-y-[-10px]">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+        <span id="toast-message" class="text-slate-200">Notification message</span>
+    </div>
+
+    <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/30 border border-brand-400/30">
+                <i class="fa-solid fa-network-wired text-lg"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-base font-black tracking-tight text-white">NexusAI Gateway Provider</h1>
+                    <span class="bg-brand-500/20 text-brand-300 border border-brand-500/30 text-[10px] font-mono px-2 py-0.5 rounded-full uppercase">v3.5 Live</span>
+                </div>
+                <p class="text-xs text-slate-400">Custom Text-to-Text API Key Generator & Hosting Bridge</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <span class="hidden sm:flex items-center gap-1.5 text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-xl font-medium">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                API Service Operational
+            </span>
+        </div>
+    </header>
+
+    <div class="bg-slate-900/50 border-b border-slate-800/80 px-4 lg:px-8">
+        <div class="max-w-7xl mx-auto flex items-center gap-1 overflow-x-auto py-2 text-xs font-semibold">
+            <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="px-4 py-2 rounded-xl transition flex items-center gap-2 text-white bg-brand-600/30 border border-brand-500/40">
+                <i class="fa-solid fa-key text-brand-400"></i>
+                <span>API Keys & Manager</span>
+            </button>
+            <button onclick="switchTab('playground')" id="tab-btn-playground" class="px-4 py-2 rounded-xl transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent">
+                <i class="fa-solid fa-terminal text-brand-400"></i>
+                <span>Live API Playground</span>
+            </button>
+            <button onclick="switchTab('chatbot')" id="tab-btn-chatbot" class="px-4 py-2 rounded-xl transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent">
+                <i class="fa-solid fa-comments text-brand-400"></i>
+                <span>Embeddable Chatbot Preview</span>
+            </button>
+            <button onclick="switchTab('deploy')" id="tab-btn-deploy" class="px-4 py-2 rounded-xl transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent">
+                <i class="fa-solid fa-cloud-arrow-up text-brand-400"></i>
+                <span>Deploy to Netlify / Render</span>
+            </button>
+        </div>
+    </div>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 space-y-8">
+
+        <!-- TAB 1: API KEYS DASHBOARD -->
+        <section id="tab-dashboard" class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-900 to-brand-950/40 border border-slate-800 p-6 rounded-3xl relative overflow-hidden shadow-2xl">
+                <div class="relative z-10 space-y-1">
+                    <h2 class="text-xl font-extrabold text-white">Your Nexus Gateway API Keys</h2>
+                    <p class="text-xs text-slate-400 max-w-xl">
+                        Generate authentication tokens to allow your external tools, mobile apps, or chatbots to communicate with Nexus AI.
+                    </p>
+                </div>
+                <button onclick="openCreateKeyModal()" class="relative z-10 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold text-xs px-5 py-3 rounded-2xl shadow-lg shadow-brand-600/30 transition flex items-center justify-center gap-2 border border-brand-400/30">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Generate New API Key</span>
+                </button>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="glass-card border border-slate-800/80 p-5 rounded-2xl">
+                    <p class="text-xs text-slate-400 font-medium">Active API Keys</p>
+                    <p class="text-2xl font-black text-white mt-1" id="stat-active-keys">1</p>
+                </div>
+                <div class="glass-card border border-slate-800/80 p-5 rounded-2xl">
+                    <p class="text-xs text-slate-400 font-medium">Monthly Request Allowance</p>
+                    <p class="text-2xl font-black text-emerald-400 mt-1">Unlimited</p>
+                </div>
+                <div class="glass-card border border-slate-800/80 p-5 rounded-2xl">
+                    <p class="text-xs text-slate-400 font-medium">Service Response Rate</p>
+                    <p class="text-2xl font-black text-brand-300 mt-1">100% High Speed</p>
+                </div>
+            </div>
+
+            <!-- Keys Table -->
+            <div class="glass-panel border border-slate-800/80 rounded-3xl overflow-hidden shadow-2xl">
+                <div class="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved text-brand-400"></i> Active Access Credentials
+                    </h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/80 text-slate-400 font-mono uppercase text-[10px] border-b border-slate-800/80">
+                            <tr>
+                                <th class="px-6 py-3.5">Key Name</th>
+                                <th class="px-6 py-3.5">API Key Token</th>
+                                <th class="px-6 py-3.5">Created Date</th>
+                                <th class="px-6 py-3.5">Status</th>
+                                <th class="px-6 py-3.5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="keys-table-body" class="divide-y divide-slate-800/60 text-slate-300">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: LIVE PLAYGROUND -->
+        <section id="tab-playground" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Request Editor -->
+                <div class="glass-panel border border-slate-800 rounded-3xl p-6 space-y-4 flex flex-col justify-between shadow-2xl">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-paper-plane text-brand-400"></i> API Request Composer
+                            </h3>
+                            <span class="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">POST /api/v1/generate</span>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-slate-300">Select API Key:</label>
+                            <select id="pg-key-select" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-slate-300">System Instruction (Optional):</label>
+                            <input type="text" id="pg-system-prompt" value="You are NexusAI Pro, an advanced text-to-text intelligence assistant. Answer clearly and precisely." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-semibold text-slate-300">Text Query / Question:</label>
+                            <textarea id="pg-user-prompt" rows="5" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 font-mono" placeholder="Ask anything to search online and generate answers..."></textarea>
+                        </div>
+                    </div>
+
+                    <button onclick="executePlaygroundRequest()" id="pg-send-btn" class="w-full bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-medium text-xs py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Send Request via Nexus Gateway</span>
+                    </button>
+                </div>
+
+                <!-- Response Viewer -->
+                <div class="glass-panel border border-slate-800 rounded-3xl p-6 space-y-4 flex flex-col justify-between shadow-2xl">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-code text-brand-400"></i> Gateway JSON Output
+                            </h3>
+                            <button onclick="copyPlaygroundOutput()" class="text-xs text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg transition">
+                                <i class="fa-regular fa-copy"></i> Copy JSON
+                            </button>
+                        </div>
+
+                        <pre id="pg-output" class="bg-slate-950 border border-slate-800/80 rounded-2xl p-4 text-xs font-mono text-emerald-400 overflow-y-auto max-h-[360px] whitespace-pre-wrap">{
+  "status": "idle",
+  "message": "Click Send Request to test the Nexus Gateway endpoint"
+}</pre>
+                    </div>
+
+                    <div id="pg-formatted-answer" class="hidden bg-slate-900/60 border border-slate-800 p-4 rounded-2xl space-y-2 text-xs text-slate-200">
+                        <span class="text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
+                            <i class="fa-solid fa-circle-check"></i> Formatted Answer Output:
+                        </span>
+                        <p id="pg-formatted-text" class="leading-relaxed whitespace-pre-wrap"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: EMBEDDABLE CHATBOT PREVIEW -->
+        <section id="tab-chatbot" class="hidden space-y-6">
+            <div class="glass-panel border border-slate-800 rounded-3xl p-6 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Embedded Chatbot Interface</h2>
+                        <p class="text-xs text-slate-400">This client-facing chatbot stores session history exclusively inside the user's browser.</p>
+                    </div>
+                    <span class="bg-emerald-500/10 text-emerald-400 text-xs px-3 py-1 rounded-full border border-emerald-500/20 font-mono">Zero Server Logging</span>
+                </div>
+
+                <!-- Chat Canvas Preview -->
+                <div class="border border-slate-800 rounded-2xl bg-slate-950 h-[500px] flex overflow-hidden">
+                    <!-- Chat History Sidebar -->
+                    <div class="w-64 bg-slate-900/80 border-r border-slate-800/80 p-3 flex flex-col justify-between hidden md:flex">
+                        <div class="space-y-3">
+                            <button onclick="createDemoThread()" class="w-full bg-brand-600/30 hover:bg-brand-600/50 text-white text-xs font-semibold py-2 px-3 rounded-xl border border-brand-500/40 flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-plus"></i> New Chat Session
+                            </button>
+                            <div class="space-y-1" id="demo-threads-list">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-slate-500 border-t border-slate-800 pt-2 flex items-center gap-1">
+                            <i class="fa-solid fa-hard-drive"></i> Encrypted in Local Browser
+                        </div>
+                    </div>
+
+                    <!-- Chat Message Stream -->
+                    <div class="flex-1 flex flex-col justify-between p-4 bg-slate-950">
+                        <div id="demo-chat-viewport" class="flex-1 overflow-y-auto space-y-4 pr-2">
+                            <!-- Populated dynamically -->
+                        </div>
+
+                        <form onsubmit="handleDemoChatSubmit(event)" class="mt-3 relative flex items-center">
+                            <input type="text" id="demo-chat-input" placeholder="Ask NexusAI Pro anything..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-4 pr-12 py-3 text-xs text-slate-100 focus:outline-none focus:border-brand-500">
+                            <button type="submit" class="absolute right-2 bg-brand-600 hover:bg-brand-500 text-white p-2 rounded-lg transition">
+                                <i class="fa-solid fa-paper-plane text-xs"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: DEPLOY TO NETLIFY / RENDER -->
+        <section id="tab-deploy" class="hidden space-y-6">
+            <div class="glass-panel border border-slate-800 rounded-3xl p-6 space-y-6">
+                <div class="border-b border-slate-800 pb-4">
+                    <h2 class="text-lg font-bold text-white">Deploy Your Backend Gateway</h2>
+                    <p class="text-xs text-slate-400">Host your own live API provider endpoint on Render or Netlify for zero cost.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Netlify Serverless Function Config -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-bolt text-teal-400"></i> Netlify Serverless Function (`netlify/functions/generate.js`)
+                            </h3>
+                            <button onclick="copyCode('code-netlify')" class="text-[11px] text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-2 py-1 rounded-md">Copy</button>
+                        </div>
+                        <pre id="code-netlify" class="bg-slate-950 border border-slate-800/80 p-4 rounded-2xl text-[11px] font-mono text-slate-300 overflow-x-auto whitespace-pre">const { GoogleGenAI } = require('@google/genai');
+
+exports.handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+
+  const authHeader = event.headers.authorization || event.headers.Authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer nexus_live_')) {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized: Invalid Gateway API Key' }) };
+  }
+
+  try {
+    const { prompt } = JSON.parse(event.body || '{}');
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      tools: [{ google_search: {} }]
+    });
+
+    const sources = response.groundingMetadata?.groundingAttributions?.map(attr => ({
+      title: attr.web?.title,
+      uri: attr.web?.uri
+    })) || [];
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        answer: response.text,
+        sources: sources
+      })
+    };
+  } catch (err) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+  }
+};</pre>
+                    </div>
+
+                    <!-- Render Express Server Config -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-server text-indigo-400"></i> Render Node.js Express (`server.js`)
+                            </h3>
+                            <button onclick="copyCode('code-render')" class="text-[11px] text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-2 py-1 rounded-md">Copy</button>
+                        </div>
+                        <pre id="code-render" class="bg-slate-950 border border-slate-800/80 p-4 rounded-2xl text-[11px] font-mono text-slate-300 overflow-x-auto whitespace-pre">const express = require('express');
+const cors = require('cors');
+const { GoogleGenAI } = require('@google/genai');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+app.post('/api/v1/generate', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer nexus_live_')) {
+    return res.status(401).json({ error: 'Unauthorized API Key' });
+  }
+
+  try {
+    const { prompt } = req.body;
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      tools: [{ google_search: {} }]
+    });
+
+    res.json({
+      success: true,
+      answer: response.text,
+      sources: response.groundingMetadata?.groundingAttributions?.map(attr => ({
+        title: attr.web?.title,
+        uri: attr.web?.uri
+      })) || []
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server live on port ${PORT}`));</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="key-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel border border-slate-800 max-w-md w-full p-6 rounded-3xl space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white">Generate Nexus API Key</h3>
+                <button onclick="closeCreateKeyModal()" class="text-slate-500 hover:text-white">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-300">Key Identifier Label:</label>
+                <input type="text" id="modal-key-label" placeholder="e.g. My Custom Chatbot App" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeCreateKeyModal()" class="flex-1 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs py-2.5 rounded-xl transition">Cancel</button>
+                <button onclick="generateApiKey()" class="flex-1 bg-brand-600 hover:bg-brand-500 text-white text-xs py-2.5 rounded-xl transition font-semibold">Generate Secret Key</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        const state = {
+            apiKeys: [],
+            demoThreads: [
+                { id: 'thread_1', title: 'Quantum Computing Briefing', messages: [
+                    { sender: 'user', text: 'Explain quantum supremacy.' },
+                    { sender: 'ai', text: 'Quantum supremacy refers to the milestone where a programmable quantum device can solve a problem that classical supercomputers cannot solve in any feasible amount of time.', sources: [] }
+                ]}
+            ],
+            activeDemoThreadId: 'thread_1'
+        };
+
+        // Utility: Toast Display
+        function showToast(message, iconClass = 'fa-solid fa-circle-check text-emerald-400') {
+            const toast = document.getElementById('toast-box');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            if (!toast || !toastMsg || !toastIcon) return;
+
+            toastMsg.textContent = message;
+            toastIcon.className = iconClass + ' text-sm';
+
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-10px]');
+            }, 3000);
+        }
+
+        // Local Storage Sync
+        function saveKeysToStorage() {
+            localStorage.setItem('nexus_gateway_keys', JSON.stringify(state.apiKeys));
+        }
+
+        function loadKeysFromStorage() {
+            const saved = localStorage.getItem('nexus_gateway_keys');
+            if (saved) {
+                try {
+                    state.apiKeys = JSON.parse(saved);
+                } catch (e) {
+                    state.apiKeys = [];
+                }
+            }
+            if (state.apiKeys.length === 0) {
+                state.apiKeys.push({
+                    id: 'key_default',
+                    label: 'Primary Production Key',
+                    token: 'nexus_live_' + Array.from({length: 24}, () => Math.random().toString(36)[2]).join(''),
+                    created: new Date().toLocaleDateString()
+                });
+                saveKeysToStorage();
+            }
+        }
+
+        // Tab Navigation
+        function switchTab(tabId) {
+            ['dashboard', 'playground', 'chatbot', 'deploy'].forEach(t => {
+                document.getElementById('tab-' + t).classList.add('hidden');
+                const btn = document.getElementById('tab-btn-' + t);
+                btn.className = 'px-4 py-2 rounded-xl transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent';
+            });
+
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('tab-btn-' + tabId);
+            activeBtn.className = 'px-4 py-2 rounded-xl transition flex items-center gap-2 text-white bg-brand-600/30 border border-brand-500/40';
+        }
+
+        // API Key Management Logic
+        function renderKeysTable() {
+            const tbody = document.getElementById('keys-table-body');
+            const select = document.getElementById('pg-key-select');
+            document.getElementById('stat-active-keys').textContent = state.apiKeys.length;
+
+            tbody.innerHTML = state.apiKeys.map(k => `
+                <tr class="hover:bg-slate-900/40 transition">
+                    <td class="px-6 py-4 font-semibold text-white">${k.label}</td>
+                    <td class="px-6 py-4 font-mono text-brand-300">
+                        ${k.token.substring(0, 14)}...${k.token.substring(k.token.length - 4)}
+                    </td>
+                    <td class="px-6 py-4 text-slate-400">${k.created}</td>
+                    <td class="px-6 py-4">
+                        <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md font-mono text-[10px]">ACTIVE</span>
+                    </td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <button onclick="copyToClipboard('${k.token}')" class="text-slate-400 hover:text-white bg-slate-800 p-1.5 rounded-lg transition" title="Copy Secret Token">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                        <button onclick="revokeApiKey('${k.id}')" class="text-slate-500 hover:text-rose-400 p-1.5 transition" title="Revoke Key">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            select.innerHTML = state.apiKeys.map(k => `<option value="${k.token}">${k.label} (${k.token.substring(0, 12)}...)</option>`).join('');
+        }
+
+        function openCreateKeyModal() {
+            document.getElementById('key-modal').classList.remove('hidden');
+        }
+
+        function closeCreateKeyModal() {
+            document.getElementById('key-modal').classList.add('hidden');
+        }
+
+        function generateApiKey() {
+            const labelInput = document.getElementById('modal-key-label');
+            const label = labelInput.value.trim() || 'Custom Client Key';
+            
+            const newToken = 'nexus_live_' + Array.from({length: 24}, () => Math.random().toString(36)[2]).join('');
+            state.apiKeys.push({
+                id: 'key_' + Date.now(),
+                label: label,
+                token: newToken,
+                created: new Date().toLocaleDateString()
+            });
+
+            saveKeysToStorage();
+            renderKeysTable();
+            closeCreateKeyModal();
+            labelInput.value = '';
+            showToast('New Nexus API Key Generated!');
+        }
+
+        function revokeApiKey(id) {
+            if (state.apiKeys.length <= 1) {
+                showToast('At least one API key must remain active.', 'fa-solid fa-triangle-exclamation text-amber-400');
+                return;
+            }
+            state.apiKeys = state.apiKeys.filter(k => k.id !== id);
+            saveKeysToStorage();
+            renderKeysTable();
+            showToast('API Key Revoked');
+        }
+
+        function copyToClipboard(text) {
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast('Copied to clipboard!');
+        }
+
+        function copyCode(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            copyToClipboard(text);
+        }
+
+        // Direct Grounded Gemini Request Execution
+        async function fetchGroundedGeminiResponse(userQuery, systemPrompt) {
+            const payload = {
+                contents: [{ role: 'user', parts: [{ text: userQuery }] }],
+                systemInstruction: { 
+                    parts: [{ text: systemPrompt || "You are NexusAI Pro, an advanced artificial intelligence. Provide comprehensive, accurate answers using online search grounding without referencing search engine names." }] 
+                },
+                tools: [{ "google_search": {} }]
+            };
+
+            const apiKey = ""; // Canvas runtime environment handles API key injection automatically
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                const text = candidate.content.parts[0].text;
+                let sources = [];
+                const groundingMetadata = candidate.groundingMetadata;
+                if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                    sources = groundingMetadata.groundingAttributions
+                        .map(attr => ({ uri: attr.web?.uri, title: attr.web?.title }))
+                        .filter(s => s.uri && s.title);
+                }
+                return { answer: text, sources: sources };
+            } else {
+                throw new Error("Unable to complete request from Nexus AI engine.");
+            }
+        }
+
+        // Live API Playground Logic
+        async function executePlaygroundRequest() {
+            const prompt = document.getElementById('pg-user-prompt').value.trim();
+            const systemPrompt = document.getElementById('pg-system-prompt').value.trim();
+            const outputEl = document.getElementById('pg-output');
+            const fmtBox = document.getElementById('pg-formatted-answer');
+            const fmtText = document.getElementById('pg-formatted-text');
+            const btn = document.getElementById('pg-send-btn');
+
+            if (!prompt) {
+                showToast('Please enter a query to test', 'fa-solid fa-triangle-exclamation text-amber-400');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Synthesizing Response...`;
+            outputEl.textContent = '{\n  "status": "processing",\n  "message": "Contacting Nexus AI Gateway..."\n}';
+            fmtBox.classList.add('hidden');
+
+            try {
+                const res = await fetchGroundedGeminiResponse(prompt, systemPrompt);
+                
+                const responseJson = {
+                    status: 200,
+                    success: true,
+                    engine: "NexusAI Synthesis Matrix",
+                    query: prompt,
+                    answer: res.answer,
+                    sources: res.sources
+                };
+
+                outputEl.textContent = JSON.stringify(responseJson, null, 2);
+                fmtText.textContent = res.answer;
+                fmtBox.classList.remove('hidden');
+                showToast('API Gateway Response Received');
+            } catch (e) {
+                outputEl.textContent = JSON.stringify({ error: e.message }, null, 2);
+                showToast('API Request Failed', 'fa-solid fa-triangle-exclamation text-amber-400');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-play"></i> Send Request via Nexus Gateway`;
+            }
+        }
+
+        function copyPlaygroundOutput() {
+            const text = document.getElementById('pg-output').innerText;
+            copyToClipboard(text);
+        }
+
+        // Embeddable Chatbot Demo Logic
+        function renderDemoChat() {
+            const viewport = document.getElementById('demo-chat-viewport');
+            const sidebar = document.getElementById('demo-threads-list');
+            const activeThread = state.demoThreads.find(t => t.id === state.activeDemoThreadId);
+
+            sidebar.innerHTML = state.demoThreads.map(t => `
+                <div onclick="selectDemoThread('${t.id}')" class="p-2 rounded-xl text-xs cursor-pointer transition flex items-center justify-between ${t.id === state.activeDemoThreadId ? 'bg-slate-800 text-white font-medium' : 'text-slate-400 hover:bg-slate-900'}">
+                    <span class="truncate max-w-[140px]">${t.title}</span>
+                </div>
+            `).join('');
+
+            if (!activeThread) return;
+
+            viewport.innerHTML = activeThread.messages.map(m => `
+                <div class="flex gap-2.5 max-w-xl ${m.sender === 'user' ? 'ml-auto justify-end' : 'mr-auto justify-start'}">
+                    ${m.sender === 'ai' ? `<div class="h-6 w-6 rounded-lg bg-brand-600 text-white flex items-center justify-center text-[10px] shrink-0"><i class="fa-solid fa-brain"></i></div>` : ''}
+                    <div class="p-3 rounded-xl text-xs ${m.sender === 'user' ? 'bg-brand-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-200'}">
+                        ${m.text}
+                    </div>
+                </div>
+            `).join('');
+
+            viewport.scrollTop = viewport.scrollHeight;
+        }
+
+        function createDemoThread() {
+            const newId = 'thread_' + Date.now();
+            state.demoThreads.unshift({
+                id: newId,
+                title: 'New Session',
+                messages: []
+            });
+            state.activeDemoThreadId = newId;
+            renderDemoChat();
+        }
+
+        function selectDemoThread(id) {
+            state.activeDemoThreadId = id;
+            renderDemoChat();
+        }
+
+        async function handleDemoChatSubmit(event) {
+            event.preventDefault();
+            const input = document.getElementById('demo-chat-input');
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            input.value = '';
+            const activeThread = state.demoThreads.find(t => t.id === state.activeDemoThreadId);
+            if (!activeThread) return;
+
+            if (activeThread.messages.length === 0) {
+                activeThread.title = prompt.length > 20 ? prompt.substring(0, 20) + '...' : prompt;
+            }
+
+            activeThread.messages.push({ sender: 'user', text: prompt });
+            renderDemoChat();
+
+            try {
+                const res = await fetchGroundedGeminiResponse(prompt);
+                activeThread.messages.push({ sender: 'ai', text: res.answer, sources: res.sources });
+                renderDemoChat();
+            } catch (e) {
+                activeThread.messages.push({ sender: 'ai', text: 'Error fetching response from gateway.', sources: [] });
+                renderDemoChat();
+            }
+        }
+
+        // Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            loadKeysFromStorage();
+            renderKeysTable();
+            renderDemoChat();
+        });
+    </script>
+</body>
+</html>
