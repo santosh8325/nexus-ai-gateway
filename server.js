@@ -1,12 +1,17 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('.'));
+
+// Serve the index.html dashboard directly at the root URL
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Central Gateway endpoint for Chatbot queries - NO API KEY REQUIRED
 app.post('/api/v1/generate', async (req, res) => {
