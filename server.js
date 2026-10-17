@@ -13,7 +13,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Strict Child Safety & Adult Content Blocklist
+// Strict Child Safety & Adult Content Blocklist for School Portals
 const blockedKeywords = [
   'porn', 'sex', 'adult', 'nude', 'gambling', 'casino', 'violence', 'kill', 
   'suicide', 'drugs', 'alcohol', 'beer', 'wine', 'weapon', 'gun', 'curse', 'badword'
@@ -24,7 +24,7 @@ function isContentSafe(text) {
   return !blockedKeywords.some(keyword => lower.includes(keyword));
 }
 
-// Central Gateway endpoint for Chatbot queries - Child Safe & Zero API Key
+// Central Gateway endpoint - Designed to respond with Claude/Gemini AI Persona
 app.post('/api/v1/generate', async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -39,35 +39,33 @@ app.post('/api/v1/generate', async (req, res) => {
       return res.json({
         success: true,
         engine: "NexusAI SafeSchool Guard",
-        answer: "I'm your safe school portal assistant! Let's focus on learning topics like math, science, history, and geography. How can I help you with your studies today?",
+        answer: "I'm here to help you learn safely! Let's explore topics in math, science, history, or literature. What would you like to study next?",
         sources: []
       });
     }
 
     let answerText = "";
 
-    // 2. Instant Math Evaluator (Handles 99 * 99, 50+50, etc., directly without fluff)
-    // Checks if prompt consists only of numbers and math operators (+, -, *, /, (, ), spaces)
+    // 2. Instant Smart Math Solver (Direct & Precise like an AI tutor)
     const mathRegex = /^[\d\s\+\-\*\/\(\)\.]+$/;
     if (mathRegex.test(cleanPrompt) && /[+\-*/]/.test(cleanPrompt)) {
       try {
-        // Safe evaluation for basic arithmetic
         const evaluatedResult = Function(`'use strict'; return (${cleanPrompt})`)();
         if (typeof evaluatedResult === 'number' && !isNaN(evaluatedResult)) {
-          answerText = `${cleanPrompt} = ${evaluatedResult}`;
+          answerText = `The answer to **${cleanPrompt}** is **${evaluatedResult}**.\n\nLet me know if you would like me to explain the steps or help you with another problem!`;
         }
       } catch (e) {
-        // Fallback if math evaluation fails
+        // Fallback if parsing fails
       }
     }
 
-    // 3. General Greetings & Study Support
+    // 3. Conversational AI Persona for General Questions
     if (!answerText) {
       const lower = cleanPrompt.toLowerCase();
       if (/^hi|hello|hey|greetings/.test(lower)) {
-        answerText = "Hello! I am your safe school assistant. Ask me any math, science, or educational question!";
+        answerText = "Hello! I am your AI learning assistant. How can I help you explore and learn today?";
       } else {
-        // 4. Fetch live educational/search results securely via DuckDuckGo
+        // Fetch web insights and structure them like an LLM assistant
         const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(cleanPrompt + " definition explanation homework")}`;
         
         const response = await fetch(searchUrl, {
@@ -80,18 +78,23 @@ app.post('/api/v1/generate', async (req, res) => {
         const snippetMatches = [...htmlText.matchAll(/<a class="result__snippet"[^>]*>(.*?)<\/a>/g)];
         let extractedAnswers = snippetMatches
           .map(m => m[1].replace(/<[^>]*>?/gm, ''))
-          .filter(snippet => isContentSafe(snippet)) // Safety filter on snippets
+          .filter(snippet => isContentSafe(snippet))
           .slice(0, 3);
 
-        answerText = extractedAnswers.length > 0 
-          ? extractedAnswers.join('\n\n')
-          : `Here is the information regarding "${cleanPrompt}": Processed securely for your school portal session.`;
+        if (extractedAnswers.length > 0) {
+          // Format like Claude/Gemini: clean summary introduction followed by bulleted insights
+          answerText = `Here is what you need to know about **${cleanPrompt}**:\n\n` + 
+            extractedAnswers.map(ans => `• ${ans}`).join('\n\n') + 
+            `\n\nI hope this helps! Let me know if you have any other questions.`;
+        } else {
+          answerText = `I processed your request regarding "${cleanPrompt}". Feel free to ask me follow-up questions so we can dive deeper into the topic!`;
+        }
       }
     }
 
     res.json({
       success: true,
-      engine: "NexusAI SafeSchool Engine",
+      engine: "NexusAI Assistant Engine",
       answer: answerText,
       sources: [
         { title: "Verified Educational Query: " + cleanPrompt, uri: `https://www.google.com/search?q=${encodeURIComponent(cleanPrompt)}&udm=50&aep=11` }
@@ -104,5 +107,5 @@ app.post('/api/v1/generate', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`NexusAI SafeSchool Gateway running on port ${PORT} (Child Mode Active)`);
+  console.log(`NexusAI Assistant Server running on port ${PORT} (AI Persona Active)`);
 });
